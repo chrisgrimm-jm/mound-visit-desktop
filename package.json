@@ -1,0 +1,21 @@
+{
+  "name": "confidence-monitor-desktop",
+  "productName": "Confidence Monitor",
+  "version": "1.0.0",
+  "description": "Desktop wrapper for Jomboy Media's Confidence Monitor: loads the hosted page, opens the talent Display fullscreen on the second monitor, auto-selects the OBS projector for capture.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "sync": "cp ../confidence-monitor/index.html app/index.html",
+    "dist": "electron-builder --win"
+  },
+  "build": {
+    "appId": "com.jomboymedia.confidencemonitor",
+    "files": ["main.js", "app/**"],
+    "win": { "target": "portable" }
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0"
+  }
+}
