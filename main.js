@@ -12,6 +12,9 @@ app.commandLine.appendSwitch('disable-features', 'CalculateNativeWinOcclusion')
 app.commandLine.appendSwitch('disable-renderer-backgrounding')
 app.commandLine.appendSwitch('disable-backgrounding-occluded-windows')
 
+// must match the build appId so a pinned taskbar icon groups with (and relaunches) this app
+app.setAppUserModelId('com.jomboymedia.confidencemonitor')
+
 if (!app.requestSingleInstanceLock()) app.quit()
 
 const isOurs = u => u.startsWith(HOSTED) || u.startsWith(BUNDLED.split('#')[0])

@@ -9,8 +9,12 @@ A thin Electron wrapper around [Confidence Monitor](https://github.com/chrisgrim
 - Keeps rendering when other windows cover it (Chromium's occlusion/background throttling is switched off).
 - Ad reads, Companion, show/hide commands — all unchanged. They live in Firebase.
 
-## Use
-Download `Confidence Monitor 1.0.0.exe` from the repo's Releases (or a workflow run's Artifacts), double-click it. It's a portable exe — no install, no admin. It's **unsigned**, so Windows SmartScreen shows a one-time "Windows protected your PC" → **More info → Run anyway**.
+## Install
+Download **`Confidence-Monitor-Setup-<version>.exe`** from the repo's Releases and run it. It installs just for your user (no admin needed), adds a desktop and Start menu shortcut, and launches the app. To pin it: open the app, right-click its taskbar icon → **Pin to taskbar**. To update the app itself, run a newer Setup over the old one (the page content already updates on its own).
+
+It's **unsigned**, so Windows SmartScreen shows a one-time "Windows protected your PC" → **More info → Run anyway**.
+
+There's also `Confidence-Monitor-Portable-<version>.exe` — no install, runs from wherever you put it, but unpacks on every launch (slower start) and has no shortcuts.
 
 Start OBS's **Virtual Camera** first (or the Display retries every 3 seconds until it appears).
 
