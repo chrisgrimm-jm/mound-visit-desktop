@@ -6,6 +6,7 @@ A thin Electron wrapper around [Confidence Monitor](https://github.com/chrisgrim
 - **Opens the talent Display by itself**, fullscreen on the second monitor (whichever monitor Control isn't on). With only one monitor it just waits for you to click **Open Talent Display**.
 - **No camera prompt.** Camera access is pre-approved, so the **Feed** card on Control lists your cameras right away, picks the OBS Virtual Camera, and the choice is remembered, same as in the browser.
 - **Capture Feed has no picker.** It finds the OBS **Windowed Projector (Program)** window by name. If it can't find it, a dialog tells you what to open in OBS.
+- **Studio name, computer name and LAN IP** for the Display's test pattern (the Windows user name is the studio name by default; override it in Control's Talent Display card). A web page can't read these, so only the desktop app provides them.
 - Keeps rendering when other windows cover it (Chromium's occlusion/background throttling is switched off).
 - Ad reads, Companion, show/hide commands — all unchanged. They live in Firebase.
 

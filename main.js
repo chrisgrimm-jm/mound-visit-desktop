@@ -1,5 +1,6 @@
 const { app, BrowserWindow, Menu, desktopCapturer, dialog, ipcMain, screen, session, shell } = require('electron')
 const fs = require('fs')
+const os = require('os')
 const { pathToFileURL } = require('url')
 const path = require('path')
 
@@ -37,6 +38,21 @@ function placeDisplay(win) {
     win.setFullScreen(true)
   } catch (e) { log('placeDisplay failed', e && e.stack || e) }
 }
+
+// Studio name for the Display's test pattern: each studio's computer is logged in as that studio, so the Windows user name is it
+ipcMain.handle('host-info', e => {
+  if (!isOurs(e.senderFrame ? e.senderFrame.url : '')) return null
+  let user = ''
+  try { user = os.userInfo().username } catch {}
+  // LAN IPv4 addresses (no loopback / link-local), private ranges first, so the Display can show where this PC is on the network
+  const ips = []
+  for (const list of Object.values(os.networkInterfaces()))
+    for (const n of list || []) if ((n.family === 'IPv4' || n.family === 4) && !n.internal && !n.address.startsWith('169.254.')) ips.push(n.address)
+  const priv = a => /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(a) ? 0 : 1
+  // only the real LAN addresses when there are any (drops VPN/Tailscale-style 100.x etc.)
+  const lan = ips.filter(a => priv(a) === 0)
+  return { user, host: os.hostname(), ips: lan.length ? lan : ips }
+})
 
 // "Open Talent Display" when it's already open: raise it (and put it back on the second monitor if it isn't fullscreen)
 ipcMain.handle('show-display', e => {
@@ -79,7 +95,7 @@ app.whenReady().then(() => {
 
   control.webContents.setWindowOpenHandler(({ url }) => {
     log('window.open', url, isOurs(url) ? 'allowed' : 'DENIED')
-    return isOurs(url) ? { action: 'allow', overrideBrowserWindowOptions: { autoHideMenuBar: true, backgroundColor: '#000' } }
+    return isOurs(url) ? { action: 'allow', overrideBrowserWindowOptions: { autoHideMenuBar: true, backgroundColor: '#000', webPreferences: { preload: path.join(__dirname, 'preload.js') } } }
                        : { action: 'deny' }
   })
   control.webContents.on('did-create-window', win => {

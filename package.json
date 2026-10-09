@@ -1,7 +1,7 @@
 {
   "name": "confidence-monitor-desktop",
   "productName": "Confidence Monitor",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "Desktop wrapper for Jomboy Media's Confidence Monitor: loads the hosted page, opens the talent Display fullscreen on the second monitor, auto-selects the OBS projector for capture.",
   "main": "main.js",
   "scripts": {
