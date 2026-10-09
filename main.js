@@ -5,7 +5,10 @@ const { pathToFileURL } = require('url')
 const path = require('path')
 
 // Hosted page = always the latest push. Bundled copy (app/index.html) only loads if the hosted one can't.
-const HOSTED = process.env.CM_URL || 'https://chrisgrimm-jm.github.io/confidence-monitor/'
+// Renamed from "Confidence Monitor": keep using the old settings folder so saved camera/studio name/layout survive the rename
+app.setPath('userData', path.join(app.getPath('appData'), 'Confidence Monitor'))
+
+const HOSTED = process.env.CM_URL || 'https://chrisgrimm-jm.github.io/mound-visit/'
 const BUNDLED = pathToFileURL(path.join(__dirname, 'app', 'index.html')).href
 
 // Chromium freezes/throttles windows that are covered or in the background (the Display is often

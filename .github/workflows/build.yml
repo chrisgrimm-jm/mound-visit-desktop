@@ -13,13 +13,13 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 20 }
       # bundle the latest page as the offline fallback (the app itself loads the hosted copy)
-      - run: curl -fsSL https://raw.githubusercontent.com/chrisgrimm-jm/confidence-monitor/main/index.html -o app/index.html
+      - run: curl -fsSL https://raw.githubusercontent.com/chrisgrimm-jm/mound-visit/main/index.html -o app/index.html
         shell: bash
       - run: npm install
       - run: npx electron-builder --win --publish never
       - uses: actions/upload-artifact@v4
         with:
-          name: confidence-monitor-windows
+          name: mound-visit-windows
           path: dist/*.exe
       - if: startsWith(github.ref, 'refs/tags/')
         run: gh release create "$GITHUB_REF_NAME" dist/*.exe --generate-notes
