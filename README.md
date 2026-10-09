@@ -4,7 +4,7 @@ A thin Electron wrapper around [Confidence Monitor](https://github.com/chrisgrim
 
 - **Loads the hosted page** (`chrisgrimm-jm.github.io/confidence-monitor`), so every push to that repo shows up the next time you launch — no rebuild needed. A copy of the page is bundled as a fallback if the hosted one can't load (note the teleprompter still needs internet for Firebase).
 - **Opens the talent Display by itself**, fullscreen on the second monitor (whichever monitor Control isn't on). With only one monitor it just waits for you to click **Open Talent Display**.
-- **No camera prompt.** Camera access is pre-approved, so **Use Camera** picks the OBS Virtual Camera and the choice is remembered, same as in the browser.
+- **No camera prompt.** Camera access is pre-approved, so the **Feed** card on Control lists your cameras right away, picks the OBS Virtual Camera, and the choice is remembered, same as in the browser.
 - **Capture Feed has no picker.** It finds the OBS **Windowed Projector (Program)** window by name. If it can't find it, a dialog tells you what to open in OBS.
 - Keeps rendering when other windows cover it (Chromium's occlusion/background throttling is switched off).
 - Ad reads, Companion, show/hide commands — all unchanged. They live in Firebase.
@@ -18,7 +18,7 @@ There's also `Confidence-Monitor-Portable-<version>.exe` — no install, runs fr
 
 Start OBS's **Virtual Camera** first (or the Display retries every 3 seconds until it appears).
 
-Menu (press Alt): View → reload, DevTools, fullscreen.
+Menu (press Alt): View → reload, DevTools, fullscreen. **Help → Open log file** opens `main.log` (window opens, monitor count, load failures) — send it along if something doesn't behave. Clicking **Open Talent Display** while the Display is already open raises it.
 
 ## Develop
 ```bash

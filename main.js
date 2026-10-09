@@ -1,4 +1,5 @@
-const { app, BrowserWindow, Menu, desktopCapturer, dialog, screen, session } = require('electron')
+const { app, BrowserWindow, Menu, desktopCapturer, dialog, ipcMain, screen, session, shell } = require('electron')
+const fs = require('fs')
 const { pathToFileURL } = require('url')
 const path = require('path')
 
@@ -18,16 +19,36 @@ app.setAppUserModelId('com.jomboymedia.confidencemonitor')
 if (!app.requestSingleInstanceLock()) app.quit()
 
 const isOurs = u => u.startsWith(HOSTED) || u.startsWith(BUNDLED.split('#')[0])
-let control, autoOpened = false
+let control, displayWin = null, autoOpened = false
+
+// tiny log so "nothing happens" reports can be diagnosed (Help -> Open log file)
+const logFile = () => path.join(app.getPath('userData'), 'main.log')
+const log = (...a) => { try { fs.appendFileSync(logFile(), new Date().toISOString() + ' ' + a.join(' ') + '\n') } catch {} }
+process.on('uncaughtException', e => log('uncaughtException', e && e.stack || e))
 
 // The talent Display goes fullscreen on whichever monitor Control isn't on (if there is one).
 function placeDisplay(win) {
-  const here = screen.getDisplayMatching(control.getBounds())
-  const other = screen.getAllDisplays().find(d => d.id !== here.id)
-  if (!other) return
-  win.setBounds(other.bounds)
-  win.setFullScreen(true)
+  try {
+    const here = screen.getDisplayMatching(control.getBounds())
+    const other = screen.getAllDisplays().find(d => d.id !== here.id)
+    log('placeDisplay: displays =', screen.getAllDisplays().length, other ? 'moving to ' + JSON.stringify(other.bounds) : 'single monitor, leaving windowed')
+    if (!other) return
+    win.setBounds(other.bounds)
+    win.setFullScreen(true)
+  } catch (e) { log('placeDisplay failed', e && e.stack || e) }
 }
+
+// "Open Talent Display" when it's already open: raise it (and put it back on the second monitor if it isn't fullscreen)
+ipcMain.handle('show-display', e => {
+  const url = e.senderFrame ? e.senderFrame.url : ''
+  if (!isOurs(url)) return false
+  if (!displayWin || displayWin.isDestroyed()) { log('show-display: no Display window'); return false }
+  log('show-display: raising existing Display')
+  if (displayWin.isMinimized()) displayWin.restore()
+  displayWin.show(); displayWin.focus()
+  if (!displayWin.isFullScreen()) placeDisplay(displayWin)
+  return true
+})
 
 app.whenReady().then(() => {
   const ses = session.defaultSession
@@ -46,19 +67,29 @@ app.whenReady().then(() => {
     cb({})
   })
 
-  Menu.setApplicationMenu(Menu.buildFromTemplate([{ label: 'View', submenu: [
-    { role: 'reload' }, { role: 'forceReload' }, { role: 'toggleDevTools' }, { role: 'togglefullscreen' } ] }]))
+  Menu.setApplicationMenu(Menu.buildFromTemplate([
+    { label: 'View', submenu: [{ role: 'reload' }, { role: 'forceReload' }, { role: 'toggleDevTools' }, { role: 'togglefullscreen' }] },
+    { label: 'Help', submenu: [{ label: 'Open log file', click: () => shell.openPath(logFile()) }] } ]))
 
-  control = new BrowserWindow({ width: 1920, height: 1080, show: false, autoHideMenuBar: true, backgroundColor: '#0b0f16' })
+  log('launch v' + app.getVersion(), 'displays =', screen.getAllDisplays().length, 'url =', HOSTED)
+  control = new BrowserWindow({ width: 1920, height: 1080, show: false, autoHideMenuBar: true, backgroundColor: '#0b0f16',
+    webPreferences: { preload: path.join(__dirname, 'preload.js') } })
   control.maximize(); control.show()
   control.on('closed', () => app.quit())
 
-  control.webContents.setWindowOpenHandler(({ url }) =>
-    isOurs(url) ? { action: 'allow', overrideBrowserWindowOptions: { autoHideMenuBar: true, backgroundColor: '#000' } }
-                : { action: 'deny' })
-  control.webContents.on('did-create-window', placeDisplay)
+  control.webContents.setWindowOpenHandler(({ url }) => {
+    log('window.open', url, isOurs(url) ? 'allowed' : 'DENIED')
+    return isOurs(url) ? { action: 'allow', overrideBrowserWindowOptions: { autoHideMenuBar: true, backgroundColor: '#000' } }
+                       : { action: 'deny' }
+  })
+  control.webContents.on('did-create-window', win => {
+    displayWin = win
+    win.on('closed', () => { if (displayWin === win) displayWin = null })
+    placeDisplay(win)
+  })
 
   control.webContents.on('did-fail-load', (_e, code, _desc, url, isMain) => {
+    log('did-fail-load', code, _desc, url, isMain ? '(main frame)' : '')
     if (isMain && code !== -3 && url.startsWith(HOSTED)) control.loadURL(BUNDLED)   // -3 = aborted, not a real failure
   })
 
