@@ -30,17 +30,67 @@ const logFile = () => path.join(app.getPath('userData'), 'main.log')
 const log = (...a) => { try { fs.appendFileSync(logFile(), new Date().toISOString() + ' ' + a.join(' ') + '\n') } catch {} }
 process.on('uncaughtException', e => log('uncaughtException', e && e.stack || e))
 
-// The talent Display goes fullscreen on whichever monitor Control isn't on (if there is one).
+// ---- which monitor the talent Display goes on (chosen on the Control page; null = "the monitor Control isn't on") ----
+let preferredMon = null   // a display id, 'windowed' (never fullscreen), or null
+
+// monitors numbered left-to-right (then top-to-bottom), which is how people count them
+function monitors() {
+  const here = control ? screen.getDisplayMatching(control.getBounds()).id : null
+  const primary = screen.getPrimaryDisplay().id
+  return screen.getAllDisplays().slice()
+    .sort((a, b) => a.bounds.x - b.bounds.x || a.bounds.y - b.bounds.y)
+    .map((d, i) => ({ id: d.id, n: i + 1, label: d.label || '', w: d.bounds.width, h: d.bounds.height, primary: d.id === primary, hasControl: d.id === here }))
+}
+// the monitor the Display should be on right now: the chosen one if it's still connected, else any monitor other than Control's
+function targetDisplay() {
+  const all = screen.getAllDisplays()
+  if (typeof preferredMon === 'number') { const d = all.find(x => x.id === preferredMon); if (d) return d }
+  const here = screen.getDisplayMatching(control.getBounds())
+  return all.find(d => d.id !== here.id) || null
+}
+function moveFullscreen(win, bounds) {
+  const go = () => { win.setBounds(bounds); win.setFullScreen(true) }
+  if (win.isFullScreen()) { win.once('leave-full-screen', go); win.setFullScreen(false) } else go()
+}
 function placeDisplay(win) {
   try {
-    const here = screen.getDisplayMatching(control.getBounds())
-    const other = screen.getAllDisplays().find(d => d.id !== here.id)
-    log('placeDisplay: displays =', screen.getAllDisplays().length, other ? 'moving to ' + JSON.stringify(other.bounds) : 'single monitor, leaving windowed')
-    if (!other) return
-    win.setBounds(other.bounds)
-    win.setFullScreen(true)
+    if (preferredMon === 'windowed') {
+      log('placeDisplay: windowed by choice')
+      if (win.isFullScreen()) win.setFullScreen(false)
+      return
+    }
+    const t = targetDisplay()
+    log('placeDisplay: displays =', screen.getAllDisplays().length, 'preferred =', preferredMon, t ? 'target ' + t.id + ' ' + JSON.stringify(t.bounds) : 'no other monitor, leaving windowed')
+    if (t) moveFullscreen(win, t.bounds)
   } catch (e) { log('placeDisplay failed', e && e.stack || e) }
 }
+
+const fromPage = e => isOurs(e.senderFrame ? e.senderFrame.url : '')
+ipcMain.handle('list-displays', e => fromPage(e) ? { monitors: monitors(), chosen: preferredMon === 'windowed' ? 'windowed' : (targetDisplay() || {}).id } : null)
+ipcMain.handle('set-display-monitor', (e, id) => {
+  if (!fromPage(e)) return false
+  preferredMon = id === 'windowed' ? 'windowed' : (typeof id === 'number' ? id : null)
+  log('set-display-monitor', preferredMon)
+  if (displayWin && !displayWin.isDestroyed()) placeDisplay(displayWin)
+  return true
+})
+// flash each monitor's number for 3 seconds so identical screens can be told apart
+ipcMain.handle('identify-displays', e => {
+  if (!fromPage(e)) return false
+  const labelOf = new Map(monitors().map(m => [m.id, m]))
+  screen.getAllDisplays().forEach(d => {
+    const m = labelOf.get(d.id), W = 460, H = 260
+    const w = new BrowserWindow({ x: Math.round(d.bounds.x + (d.bounds.width - W) / 2), y: Math.round(d.bounds.y + (d.bounds.height - H) / 2), width: W, height: H,
+      frame: false, transparent: true, alwaysOnTop: true, focusable: false, skipTaskbar: true, resizable: false, hasShadow: false })
+    w.setIgnoreMouseEvents(true)
+    const html = `<body style="margin:0;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(11,15,22,.92);border:6px solid #E40000;box-sizing:border-box;border-radius:24px;color:#fff;font-family:Impact,sans-serif;overflow:hidden">
+      <div style="font-size:30px;letter-spacing:4px;color:#00B7FF">MONITOR</div><div style="font-size:150px;line-height:1">${m.n}</div>
+      <div style="font:600 18px sans-serif;color:#b8c0d0">${m.w}×${m.h}${m.primary ? ' · main' : ''}</div></body>`
+    w.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(html))
+    setTimeout(() => { if (!w.isDestroyed()) w.destroy() }, 3000)
+  })
+  return true
+})
 
 // Studio name for the Display's test pattern: each studio's computer is logged in as that studio, so the Windows user name is it
 ipcMain.handle('host-info', e => {
