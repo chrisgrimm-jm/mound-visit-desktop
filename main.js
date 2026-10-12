@@ -164,7 +164,8 @@ app.whenReady().then(() => {
 
   // open the Display straight away when there's a second monitor to put it on
   control.webContents.on('did-finish-load', () => {
-    if (autoOpened || screen.getAllDisplays().length < 2) return
+    // no auto-open until the user has picked a monitor once (the page asks on the first manual open)
+    if (autoOpened || screen.getAllDisplays().length < 2 || preferredMon === null) return
     autoOpened = true
     setTimeout(() => control.webContents.executeJavaScript('document.getElementById("openDisplay")?.click()', true), 1500)
   })
