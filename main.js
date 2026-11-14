@@ -13,7 +13,10 @@ const BUNDLED = pathToFileURL(path.join(__dirname, 'app', 'index.html')).href
 
 // Chromium freezes/throttles windows that are covered or in the background (the Display is often
 // covered by other windows, and a frozen capture would freeze the feed).
-app.commandLine.appendSwitch('disable-features', 'CalculateNativeWinOcclusion')
+// MediaFoundationVideoCapture off = Chromium reads cameras through DirectShow, OBS Virtual Camera's native
+// interface; through Media Foundation it delivered only ~10 fps of OBS's 60. (One disable-features switch only:
+// a second appendSwitch would replace this one.)
+app.commandLine.appendSwitch('disable-features', 'CalculateNativeWinOcclusion,MediaFoundationVideoCapture')
 app.commandLine.appendSwitch('disable-renderer-backgrounding')
 app.commandLine.appendSwitch('disable-backgrounding-occluded-windows')
 
