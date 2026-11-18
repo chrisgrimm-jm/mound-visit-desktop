@@ -1,7 +1,7 @@
 {
   "name": "mound-visit-desktop",
   "productName": "Mound Visit",
-  "version": "1.4.3",
+  "version": "1.4.4",
   "description": "Desktop wrapper for Jomboy Media's Mound Visit: loads the hosted page, opens the talent Display fullscreen on the second monitor, auto-selects the OBS projector for capture.",
   "main": "main.js",
   "scripts": {
