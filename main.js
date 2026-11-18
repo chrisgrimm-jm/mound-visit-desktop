@@ -173,7 +173,8 @@ app.whenReady().then(() => {
     setTimeout(() => control.webContents.executeJavaScript('document.getElementById("openDisplay")?.click()', true), 1500)
   })
 
-  control.loadURL(HOSTED)
+  // drop the HTTP cache first: GitHub Pages sends max-age=600, so a relaunch could otherwise show a page up to 10 min old
+  session.defaultSession.clearCache().finally(() => control.loadURL(HOSTED))
 })
 
 app.on('second-instance', () => { if (control) { if (control.isMinimized()) control.restore(); control.focus() } })
